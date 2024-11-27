@@ -69,8 +69,7 @@ public class MainFrame extends JFrame {
             contentPanel.add(pecPanel, "pec");
             
             
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
             System.err.println("Erreur lors de l'initialisastion des panneaux: " + e.getMessage());
         }
         
