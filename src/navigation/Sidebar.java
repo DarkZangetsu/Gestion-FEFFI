@@ -43,20 +43,14 @@ public class Sidebar extends JPanel {
         addMenuItem("Tableau de bord", "dashboard", "🏠");
         addMenuItem("Établissement", "etablissement", "🏫");
         addMenuItem("Mandataires", "mandataires", "📋");
-        addMenuItem("Caisse École", "caisse", "💰");
         
         // Nouvelle section Transactions
-        addSection("Transactions et budget");
-        addMenuItem("Budget", "budget", "💳");
+        addSection("Transactions et caisse");
         addMenuItem("Transactions", "liste-transactions", "📝");
+        addMenuItem("Caisse École", "caisse", "💰");
         
         addSection("Planification");
         addMenuItem("Planification PEC", "pec", "📅");
-        addMenuItem("TESI", "tesi", "📊");
-
-        addSection("Rapports");
-        addMenuItem("Rapports", "rapports", "📈");
-        addMenuItem("Statistiques", "statistiques", "📉");
 
         addSection("Paramètres");
         addMenuItem("Utilisateurs", "utilisateurs", "👤");

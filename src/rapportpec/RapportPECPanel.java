@@ -8,60 +8,85 @@ import java.util.UUID;
 import javaswingdev.swing.table.Table;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.border.EmptyBorder;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
 
 public final class RapportPECPanel extends JPanel {
+    // Color Palette - Matching CaisseEcolePanel
+    private final Color primaryColor = new Color(23, 32, 42);
+    private final Color hoverColor = new Color(33, 97, 140);
+    private final Color activeColor = new Color(33, 97, 140);
+    private final Color otherColor = new Color(41, 128, 185);
+    private final Color backgroundColor = new Color(236, 240, 241);
+    private final Color textColor = new Color(44, 62, 80);
+    private final Color tableBackgroundColor = new Color(247, 249, 250);
+
     private final RapportPECController controller;
     private final JTable table;
     private final DefaultTableModel tableModel;
-    private JTextField searchField;
     private final String planificationId;
+    private JTextField searchField;
 
-    public RapportPECPanel(String planificationId) throws ClassNotFoundException {
+    private final String[] columns = {"Période", "Indicateurs", "Activités", "Désignation", 
+                                      "Prix Unitaire", "Quantité", "Source Financement", 
+                                      "Date de création", "Observation", "Actions"};
+
+    public RapportPECPanel(String planificationId) {
         this.planificationId = planificationId;
-        setBackground(Color.WHITE);
         setLayout(new BorderLayout(0, 10));
+        setBackground(backgroundColor);
 
         this.controller = new RapportPECController();
-        
-        // Bannière d'en-tête
+
+        // Add header banner
         JPanel headerBanner = createHeaderBanner();
         add(headerBanner, BorderLayout.NORTH);
 
-        // Panneau supérieur avec recherche et boutons
+        // Create main panel
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BorderLayout(0, 10));
+        mainPanel.setBackground(backgroundColor);
+
+        // Top panel with search and actions
         JPanel topPanel = createTopPanel();
-        add(topPanel, BorderLayout.NORTH);
+        mainPanel.add(topPanel, BorderLayout.NORTH);
 
-        // Table
-        String[] columns = {"Période", "Indicateurs", "Activités", "Désignation", "Prix Unitaire", 
-                          "Quantité", "Source Financement", "Date de création", "Observation", "Actions"};
-        tableModel = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return column == columns.length - 1;
+        // Table initialization
+        tableModel = createTableModel(columns);
+        table = createStyledTable(columns);
+
+        // Table panel
+        JPanel tablePanel = createTablePanel();
+        mainPanel.add(tablePanel, BorderLayout.CENTER);
+
+        add(mainPanel, BorderLayout.CENTER);
+        
+        SwingUtilities.invokeLater(() -> {
+            Window parentWindow = SwingUtilities.getWindowAncestor(RapportPECPanel.this);
+            if (parentWindow instanceof JFrame frame) {
+                frame.setSize(1200, 600);
+                frame.setLocationRelativeTo(null);
             }
-        };
+        });
 
-        table = createTable(columns);
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
-        add(scrollPane, BorderLayout.CENTER);
-
-        // Chargement initial des données
+        // Initial data load
         refreshTable();
     }
-    
+
     private JPanel createHeaderBanner() {
         JPanel bannerPanel = new JPanel(new BorderLayout());
-        bannerPanel.setBackground(new Color(33, 150, 243)); // Bleu
-        bannerPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+        bannerPanel.setBackground(primaryColor);
+        bannerPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
         JLabel titleLabel = new JLabel("Gérer les Rapports PEC");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -71,24 +96,33 @@ public final class RapportPECPanel extends JPanel {
 
     private JPanel createTopPanel() {
         JPanel topPanel = new JPanel(new BorderLayout(10, 10));
-        topPanel.setBackground(Color.WHITE);
-        topPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        topPanel.setBackground(backgroundColor);
+        topPanel.setBorder(new EmptyBorder(5, 20, 5, 20));
 
-        // Panneau de recherche
+        // Search Panel
+        JPanel searchPanel = createSearchPanel();
+        topPanel.add(searchPanel, BorderLayout.WEST);
+
+        // Action Panel
+        JPanel actionPanel = createActionPanel();
+        topPanel.add(actionPanel, BorderLayout.EAST);
+
+        return topPanel;
+    }
+
+    private JPanel createSearchPanel() {
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        searchPanel.setBackground(Color.WHITE);
+        searchPanel.setBackground(backgroundColor);
 
         searchField = new JTextField(30);
-        searchField.setPreferredSize(new Dimension(300, 40));
-        searchField.setFont(new Font("Arial", Font.PLAIN, 14));
-        
-        JButton searchButton = new JButton("Rechercher");
-        searchButton.setBackground(new Color(33, 150, 243));
-        searchButton.setForeground(Color.WHITE);
-        searchButton.setBorderPainted(false);
-        searchButton.setPreferredSize(new Dimension(120, 40));
-        searchButton.setFont(new Font("Arial", Font.BOLD, 14));
+        searchField.setPreferredSize(new Dimension(350, 45));
+        searchField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        searchField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(hoverColor, 2),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
 
+        JButton searchButton = createStyledButton("Rechercher", hoverColor);
         searchButton.addActionListener(e -> performSearch());
         searchField.addActionListener(e -> performSearch());
 
@@ -96,50 +130,130 @@ public final class RapportPECPanel extends JPanel {
         searchPanel.add(searchField);
         searchPanel.add(searchButton);
 
-        // Panneau des boutons d'action
-        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        actionPanel.setBackground(Color.WHITE);
+        return searchPanel;
+    }
 
-        JButton addButton = new JButton("Ajouter");
-        addButton.setBackground(new Color(76, 175, 80));
-        addButton.setForeground(Color.WHITE);
-        addButton.setBorderPainted(false);
-        addButton.setPreferredSize(new Dimension(120, 40));
-        addButton.setFont(new Font("Arial", Font.BOLD, 14));
+    private JPanel createActionPanel() {
+        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        actionPanel.setBackground(backgroundColor);
+
+        JButton addButton = createStyledButton("Ajouter", activeColor);
         addButton.addActionListener(e -> showAddDialog());
 
-        JButton exportButton = new JButton("Exporter PDF");
-        exportButton.setBackground(new Color(33, 150, 243));
-        exportButton.setForeground(Color.WHITE);
-        exportButton.setBorderPainted(false);
-        exportButton.setPreferredSize(new Dimension(150, 40));
-        exportButton.setFont(new Font("Arial", Font.BOLD, 14));
+        JButton exportButton = createStyledButton("Exporter PDF", otherColor);
         exportButton.addActionListener(e -> exportToPDF());
 
         actionPanel.add(addButton);
         actionPanel.add(exportButton);
 
-        topPanel.add(searchPanel, BorderLayout.WEST);
-        topPanel.add(actionPanel, BorderLayout.EAST);
-
-        return topPanel;
+        return actionPanel;
     }
 
-    private Table createTable(String[] columns) {
-        Table newTable = new Table();
-        newTable.setModel(tableModel);
-        
-        newTable.getColumnModel().getColumn(columns.length - 1).setCellRenderer(new ButtonRenderer());
-        newTable.getColumnModel().getColumn(columns.length - 1).setCellEditor(
-            new ButtonEditor(new JCheckBox(), this, controller, newTable, planificationId));
+    private JButton createStyledButton(String text, Color backgroundColor) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        button.setBackground(backgroundColor);
+        button.setForeground(Color.WHITE);
+        button.setBorderPainted(false);
+        button.setFocusPainted(false);
+        button.setPreferredSize(new Dimension(180, 45));
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent evt) {
+                button.setBackground(backgroundColor.darker());
+            }
+            @Override
+            public void mouseExited(MouseEvent evt) {
+                button.setBackground(backgroundColor);
+            }
+        });
+        return button;
+    }
 
-        // Définir les largeurs des colonnes
-        int[] widths = {100, 100, 150, 150, 100, 80, 150, 150, 150, 100};
-        for (int i = 0; i < widths.length; i++) {
-            newTable.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
+    private DefaultTableModel createTableModel(String[] columns) {
+        return new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column == columns.length - 1;
+            }
+        };
+    }
+
+    private JPanel createTablePanel() {
+        JPanel tablePanel = new JPanel(new BorderLayout(0, 10));
+        tablePanel.setBorder(new EmptyBorder(10, 20, 20, 20));
+
+        // Table title
+        JLabel tableTitle = new JLabel("Liste des Rapports PEC");
+        tableTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        tableTitle.setForeground(textColor);
+        tablePanel.add(tableTitle, BorderLayout.NORTH);
+
+        // Table with scrollpane
+        JScrollPane scrollPane = createStyledScrollPane(table);
+        tablePanel.add(scrollPane, BorderLayout.CENTER);
+
+        return tablePanel;
+    }
+
+    private JTable createStyledTable(String[] columns) {
+        Table styledTable = new Table();
+        styledTable.setModel(tableModel);
+        
+        // Center text in all cells
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        for (int i = 0; i < styledTable.getColumnCount(); i++) {
+            styledTable.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
         }
-    
-        return newTable;
+
+        // Table visual configuration
+        styledTable.setBackground(Color.WHITE);
+        styledTable.setOpaque(true);
+        styledTable.setSelectionBackground(hoverColor);
+        styledTable.setSelectionForeground(Color.WHITE);
+        styledTable.setRowHeight(40);
+        styledTable.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        
+        // Table header
+        styledTable.getTableHeader().setBackground(primaryColor);
+        styledTable.getTableHeader().setForeground(Color.WHITE);
+        styledTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 16));
+
+        // Column widths
+        int[] columnWidths = {100, 100, 150, 150, 100, 80, 150, 150, 150, 80};
+        for (int i = 0; i < columns.length; i++) {
+            styledTable.getColumnModel().getColumn(i).setPreferredWidth(columnWidths[i]);
+        }
+
+        // Actions column - using CaisseEcole style icon renderer and editor
+        styledTable.getColumnModel().getColumn(columns.length - 1).setCellRenderer(new IconRenderer());
+        styledTable.getColumnModel().getColumn(columns.length - 1).setCellEditor(
+            new IconEditor(new JCheckBox(), this, controller, styledTable, planificationId));
+
+        return styledTable;
+    }
+
+    private JScrollPane createStyledScrollPane(JTable table) {
+        JScrollPane scrollPane = new JScrollPane(table);
+        
+        // Custom background for scroll pane
+        scrollPane.getViewport().setBackground(tableBackgroundColor);
+        scrollPane.setBackground(tableBackgroundColor);
+        
+        // Border with subtle shadow
+        scrollPane.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createEmptyBorder(10, 20, 20, 20),
+            BorderFactory.createLineBorder(new Color(220, 230, 240), 1)
+        ));
+
+        // Add shadow effect
+        scrollPane.setBorder(BorderFactory.createCompoundBorder(
+            scrollPane.getBorder(),
+            BorderFactory.createMatteBorder(1, 1, 2, 2, new Color(200, 210, 220))
+        ));
+
+        return scrollPane;
     }
 
     public void refreshTable() {
@@ -499,135 +613,216 @@ private boolean validateForm(JTextField... fields) {
     }
 }
 
-class ButtonRenderer extends JButton implements TableCellRenderer {
-    public ButtonRenderer() {
+class IconRenderer extends JPanel implements TableCellRenderer {
+    private final JLabel moreIcon;
+
+    public IconRenderer() {
+        setLayout(new GridBagLayout());
         setOpaque(true);
-        setBackground(new Color(33, 150, 243));
-        setForeground(Color.WHITE);
-        setBorderPainted(false);
-        setFont(new Font("Arial", Font.BOLD, 14));
+        
+        ImageIcon icon = loadScaledIcon("src/icons/more.png", 24, 24);
+        moreIcon = new JLabel(icon);
+        moreIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        
+        add(moreIcon);
+    }
+
+    private ImageIcon loadScaledIcon(String path, int width, int height) {
+        try {
+            ImageIcon originalIcon = new ImageIcon(path);
+            Image scaledImage = originalIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+            return new ImageIcon(scaledImage);
+        } catch (Exception e) {
+            System.err.println("Erreur de chargement de l'icône : " + path);
+            return null;
+        }
     }
 
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value,
             boolean isSelected, boolean hasFocus, int row, int column) {
-        setText("Actions");
+        if (isSelected) {
+            setBackground(new Color(220, 220, 220));
+        } else {
+            setBackground(Color.WHITE);
+        }
         return this;
     }
 }
 
-class ButtonEditor extends DefaultCellEditor {
-    private final JButton button;
-    private String label;
-    private boolean isPushed;
+class IconEditor extends DefaultCellEditor {
+    private final JPanel actionPanel;
+    private final JLabel moreIcon;
+    private final JLabel editIcon;
+    private final JLabel deleteIcon;
     private final RapportPECPanel panel;
     private final RapportPECController controller;
     private final JTable table;
     private final String planificationId;
+    private JDialog activeDialog;
 
-    public ButtonEditor(JCheckBox checkBox, RapportPECPanel panel,
-                       RapportPECController controller, JTable table, String planificationId) {
+    public IconEditor(JCheckBox checkBox, RapportPECPanel panel, 
+                            RapportPECController controller, JTable table, String planificationId) {
         super(checkBox);
         this.panel = panel;
         this.controller = controller;
         this.table = table;
         this.planificationId = planificationId;
 
-        button = new JButton();
-        button.setOpaque(true);
-        button.setBackground(new Color(33, 150, 243));
-        button.setForeground(Color.WHITE);
-        button.setBorderPainted(false);
-        button.setFont(new Font("Arial", Font.BOLD, 14));
-        button.addActionListener(e -> fireEditingStopped());
+        actionPanel = new JPanel(new GridBagLayout());
+        actionPanel.setOpaque(true);
+        actionPanel.setBackground(Color.WHITE);
+
+        // Charger les icônes à partir des fichiers
+        moreIcon = new JLabel(loadScaledIcon("src/icons/more.png", 24, 24));
+        editIcon = new JLabel(loadScaledIcon("src/icons/edit.png", 24, 24));
+        deleteIcon = new JLabel(loadScaledIcon("src/icons/delete.png", 24, 24));
+
+        // Configurer les curseurs
+        moreIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        editIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        deleteIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+    }
+
+    private ImageIcon loadScaledIcon(String path, int width, int height) {
+        try {
+            ImageIcon originalIcon = new ImageIcon(path);
+            Image scaledImage = originalIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+            return new ImageIcon(scaledImage);
+        } catch (Exception e) {
+            System.err.println("Erreur de chargement de l'icône : " + path);
+            return null;
+        }
     }
 
     @Override
     public Component getTableCellEditorComponent(JTable table, Object value,
             boolean isSelected, int row, int column) {
-        label = (value == null) ? "" : value.toString();
-        button.setText(label);
-        isPushed = true;
-        return button;
-    }
-
-    @Override
-    public Object getCellEditorValue() {
-        if (isPushed) {
-            showActionsPopup();
+        // Fermer tout dialogue actif
+        if (activeDialog != null && activeDialog.isVisible()) {
+            activeDialog.dispose();
+            activeDialog = null;
         }
-        isPushed = false;
-        return label;
-    }
 
-    private void showActionsPopup() {
-        int row = table.getSelectedRow();
-        if (row < 0) return;
+        actionPanel.removeAll();
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.CENTER;
+        actionPanel.add(moreIcon, gbc);
 
-        String activities = table.getValueAt(row, 2).toString();
+        moreIcon.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                actionPanel.removeAll();
+                
+                // Disposition centrée pour les icônes edit et delete
+                GridBagConstraints gbc = new GridBagConstraints();
+                gbc.gridx = 0;
+                gbc.gridy = 0;
+                gbc.insets = new Insets(0, 5, 0, 5); // Espacement horizontal
+                gbc.anchor = GridBagConstraints.CENTER;
+                
+                actionPanel.add(editIcon, gbc);
+                gbc.gridx = 1;
+                actionPanel.add(deleteIcon, gbc);
+                
+                actionPanel.revalidate();
+                actionPanel.repaint();
 
-        JPopupMenu popup = new JPopupMenu();
+                // Gestion des actions pour les icônes
+                editIcon.addMouseListener(new java.awt.event.MouseAdapter() {
+                    @Override
+                    public void mouseClicked(java.awt.event.MouseEvent evt) {
+                        int row = table.getSelectedRow();
+                        String activities = table.getValueAt(row, 2).toString();
+                        
+                        List<RapportPEC> rapports = controller.searchRapports(activities, planificationId);
+                        if (!rapports.isEmpty()) {
+                            RapportPEC rapport = rapports.get(0);
+                            activeDialog = showEditDialog(rapport);
+                            
+                            // Ajouter un écouteur pour la fermeture du dialogue
+                            activeDialog.addWindowListener(new java.awt.event.WindowAdapter() {
+                                @Override
+                                public void windowClosed(java.awt.event.WindowEvent windowEvent) {
+                                    // Restaurer l'état initial des icônes
+                                    restoreMoreIcon();
+                                }
+                            });
+                        }
+                    }
+                });
 
-        JMenuItem editItem = new JMenuItem("Modifier");
-        editItem.setBackground(new Color(33, 150, 243));
-        editItem.setForeground(Color.WHITE);
-        editItem.setFont(new Font("Arial", Font.BOLD, 14));
-        editItem.addActionListener(e -> {
-            List<RapportPEC> rapports = controller.searchRapports(activities, planificationId);
-            if (!rapports.isEmpty()) {
-                RapportPEC rapport = rapports.get(0);
-                showEditDialog(rapport);
+                deleteIcon.addMouseListener(new java.awt.event.MouseAdapter() {
+                    @Override
+                    public void mouseClicked(java.awt.event.MouseEvent evt) {
+                        // Centrer la boîte de dialogue
+                        JOptionPane optionPane = new JOptionPane(
+                            "Êtes-vous sûr de vouloir supprimer ce rapport ?",
+                            JOptionPane.QUESTION_MESSAGE,
+                            JOptionPane.YES_NO_OPTION
+                        );
+                        JDialog dialog = optionPane.createDialog(panel, "Confirmation de suppression");
+                        dialog.setModal(true);
+                        dialog.setLocationRelativeTo(panel); // Centrer par rapport au panel parent
+                        dialog.setVisible(true);
+
+                        Object selectedValue = optionPane.getValue();
+                        if (selectedValue != null && 
+                            (int) selectedValue == JOptionPane.YES_OPTION) {
+                            int selectedRow = table.getSelectedRow();
+                            String activities = table.getValueAt(selectedRow, 2).toString();
+                            List<RapportPEC> rapports = controller.searchRapports(activities, planificationId);
+                            if (!rapports.isEmpty()) {
+                                controller.deleteRapport(rapports.get(0).getId());
+                                panel.refreshTable();
+                            }
+                        }
+
+                        // Restaurer l'état initial des icônes
+                        restoreMoreIcon();
+                    }
+                });
             }
         });
-        popup.add(editItem);
 
-        JMenuItem deleteItem = new JMenuItem("Supprimer");
-        deleteItem.setBackground(new Color(244, 67, 54));
-        deleteItem.setForeground(Color.WHITE);
-        deleteItem.setFont(new Font("Arial", Font.BOLD, 14));
-        deleteItem.addActionListener(e -> {
-            int confirmation = JOptionPane.showConfirmDialog(
-                button,
-                "Êtes-vous sûr de vouloir supprimer ce rapport ?",
-                "Confirmation de suppression",
-                JOptionPane.YES_NO_OPTION
-            );
-
-            if (confirmation == JOptionPane.YES_OPTION) {
-                List<RapportPEC> rapports = controller.searchRapports(activities, planificationId);
-                if (!rapports.isEmpty()) {
-                    controller.deleteRapport(rapports.get(0).getId());
-                    panel.refreshTable();
-                }
-            }
-        });
-        popup.add(deleteItem);
-
-        popup.show(button, 0, button.getHeight());
+        return actionPanel;
     }
 
-    // Et aussi mettre à jour la méthode showEditDialog dans ButtonEditor :
-        private void showEditDialog(RapportPEC rapport) {
-            Window parentWindow = SwingUtilities.getWindowAncestor(panel);
-            JDialog dialog;
+    private void restoreMoreIcon() {
+        actionPanel.removeAll();
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.CENTER;
+        actionPanel.add(moreIcon, gbc);
+        actionPanel.revalidate();
+        actionPanel.repaint();
+    }
+
+    private JDialog showEditDialog(RapportPEC rapport) {
+        Window parentWindow = SwingUtilities.getWindowAncestor(panel);
+        JDialog dialog;
         switch (parentWindow) {
             case JFrame jFrame -> dialog = new JDialog(jFrame, "Modifier le rapport", true);
             case JDialog jDialog -> dialog = new JDialog(jDialog, "Modifier le rapport", true);
             default -> dialog = new JDialog(new JFrame(), "Modifier le rapport", true);
         }
-            dialog.setLayout(new BorderLayout());
+        dialog.setLayout(new BorderLayout());
 
-            JPanel form = panel.createForm(rapport, dialog);
-            dialog.add(form, BorderLayout.CENTER);
-            dialog.pack();
-            dialog.setLocationRelativeTo(panel);
-            dialog.setVisible(true);
-        }
+        JPanel form = panel.createForm(rapport, dialog);
+        dialog.add(form, BorderLayout.CENTER);
+        dialog.pack();
+        dialog.setLocationRelativeTo(panel);
+        dialog.setVisible(true);
 
+        return dialog;
+    }
+
+    @Override
+    public Object getCellEditorValue() {
+        return "";
+    }
 
     @Override
     public boolean stopCellEditing() {
-        isPushed = false;
         return super.stopCellEditing();
     }
 }

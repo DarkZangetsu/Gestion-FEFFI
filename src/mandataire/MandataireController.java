@@ -48,4 +48,21 @@ public class MandataireController {
             throw new RuntimeException("Erreur lors de l'export PDF : " + e.getMessage());
         }
     }
+    
+    public String findMandataireIdByDetails(String nom, String cin, String etablissement) {
+    try {
+        List<Mandataire> mandataires = mandataireDAO.readAll();
+        for (var mandataire : mandataires) {
+            if (mandataire.getNom().equals(nom) && 
+                mandataire.getCin().equals(cin) && 
+                mandataire.getNomEtablissement().equals(etablissement)) {
+                return mandataire.getId();
+            }
+        }
+        return null;
+    } catch (Exception e) {
+        System.err.println("Erreur lors de la recherche de l'ID du mandataire : " + e.getMessage());
+        return null;
+    }
+}
 }

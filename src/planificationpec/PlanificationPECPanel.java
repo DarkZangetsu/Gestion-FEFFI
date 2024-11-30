@@ -11,53 +11,69 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import com.toedter.calendar.JDateChooser;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import rapportpec.RapportPECPanel;
 
 public class PlanificationPECPanel extends JPanel {
+    // Color Palette (matching EtablissementPanel)
+    private final Color primaryColor = new Color(23, 32, 42);
+    private final Color hoverColor = new Color(33, 97, 140);
+    private final Color activeColor = new Color(33, 97, 140);
+    private final Color otherColor = new Color(41, 128, 185);
+    private final Color backgroundColor = new Color(236, 240, 241);
+    private final Color textColor = new Color(44, 62, 80);
+    private final Color tableBackgroundColor = new Color(247, 249, 250);
+
     private final PlanificationPECController controller;
     private final JTable table;
     private final DefaultTableModel tableModel;
     private JTextField searchField;
 
     public PlanificationPECPanel() throws ClassNotFoundException {
-        setBackground(Color.WHITE);
-        setLayout(new BorderLayout(0, 10));
+        setLayout(new BorderLayout(0, 10)); 
+        setBackground(backgroundColor);
 
         this.controller = new PlanificationPECController();
         
-        // Bannière d'en-tête
+        // Add header banner
         JPanel headerBanner = createHeaderBanner();
         add(headerBanner, BorderLayout.NORTH);
 
-        // Panneau supérieur avec recherche et boutons
+        // Create main panel
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BorderLayout(0, 10));
+        mainPanel.setBackground(backgroundColor);
+
+        // Add top panel (search and actions)
         JPanel topPanel = createTopPanel();
-        add(topPanel, BorderLayout.NORTH);
+        mainPanel.add(topPanel, BorderLayout.NORTH);
 
-        // Table
+        // Initialize table model and table
         String[] columns = {"Date Début", "Date Fin", "Activités", "Date de création", "Actions"};
-        tableModel = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return column == columns.length - 1;
-            }
-        };
+        tableModel = createTableModel(columns);
+        table = createStyledTable(columns);
 
-        table = createTable(columns);
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
-        add(scrollPane, BorderLayout.CENTER);
+        // Add table panel
+        JScrollPane scrollPane = createStyledScrollPane(table);
+        JPanel tablePanel = createTablePanel();
+        tablePanel.add(scrollPane);
+        mainPanel.add(tablePanel, BorderLayout.CENTER);
 
-        // Chargement initial des données
+        // Add main panel to center of PlanificationPECPanel
+        add(mainPanel, BorderLayout.CENTER);
+
+        // Load initial data
         refreshTable();
     }
     
     private JPanel createHeaderBanner() {
         JPanel bannerPanel = new JPanel(new BorderLayout());
-        bannerPanel.setBackground(new Color(76, 175, 80)); // Vert
-        bannerPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+        bannerPanel.setBackground(primaryColor);
+        bannerPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
         JLabel titleLabel = new JLabel("Gérer les Planifications PEC");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -65,26 +81,44 @@ public class PlanificationPECPanel extends JPanel {
         return bannerPanel;
     }
 
-    private JPanel createTopPanel() {
-        JPanel topPanel = new JPanel(new BorderLayout(10, 10));
-        topPanel.setBackground(Color.WHITE);
-        topPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+    private DefaultTableModel createTableModel(String[] columns) {
+        return new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column == columns.length - 1;
+            }
+        };
+    }
 
-        // Panneau de recherche
+    private JPanel createTopPanel() {
+        JPanel topPanel = new JPanel(new BorderLayout(10, 10)); 
+        topPanel.setBackground(backgroundColor);
+        topPanel.setBorder(new EmptyBorder(5, 20, 5, 20)); 
+
+        // Search Panel
+        JPanel searchPanel = createSearchPanel();
+        topPanel.add(searchPanel, BorderLayout.WEST);
+
+        // Action Panel
+        JPanel actionPanel = createActionPanel();
+        topPanel.add(actionPanel, BorderLayout.EAST);
+
+        return topPanel;
+    }
+
+    private JPanel createSearchPanel() {
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        searchPanel.setBackground(Color.WHITE);
+        searchPanel.setBackground(backgroundColor);
 
         searchField = new JTextField(30);
-        searchField.setPreferredSize(new Dimension(300, 40));
-        searchField.setFont(new Font("Arial", Font.PLAIN, 14));
-        
-        JButton searchButton = new JButton("Rechercher");
-        searchButton.setBackground(new Color(33, 150, 243));
-        searchButton.setForeground(Color.WHITE);
-        searchButton.setBorderPainted(false);
-        searchButton.setPreferredSize(new Dimension(120, 40));
-        searchButton.setFont(new Font("Arial", Font.BOLD, 14));
+        searchField.setPreferredSize(new Dimension(350, 45));
+        searchField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        searchField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(hoverColor, 2),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
 
+        JButton searchButton = createStyledButton("Rechercher", hoverColor);
         searchButton.addActionListener(e -> performSearch());
         searchField.addActionListener(e -> performSearch());
 
@@ -92,50 +126,117 @@ public class PlanificationPECPanel extends JPanel {
         searchPanel.add(searchField);
         searchPanel.add(searchButton);
 
-        // Panneau des boutons d'action
-        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        actionPanel.setBackground(Color.WHITE);
+        return searchPanel;
+    }
 
-        JButton addButton = new JButton("Ajouter");
-        addButton.setBackground(new Color(76, 175, 80));
-        addButton.setForeground(Color.WHITE);
-        addButton.setBorderPainted(false);
-        addButton.setPreferredSize(new Dimension(120, 40));
-        addButton.setFont(new Font("Arial", Font.BOLD, 14));
+    private JPanel createActionPanel() {
+        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        actionPanel.setBackground(backgroundColor);
+
+        JButton addButton = createStyledButton("Ajouter", activeColor);
         addButton.addActionListener(e -> showAddDialog());
 
-        JButton exportButton = new JButton("Exporter PDF");
-        exportButton.setBackground(new Color(33, 150, 243));
-        exportButton.setForeground(Color.WHITE);
-        exportButton.setBorderPainted(false);
-        exportButton.setPreferredSize(new Dimension(150, 40));
-        exportButton.setFont(new Font("Arial", Font.BOLD, 14));
+        JButton exportButton = createStyledButton("Exporter PDF", otherColor);
         exportButton.addActionListener(e -> exportToPDF());
 
         actionPanel.add(addButton);
         actionPanel.add(exportButton);
 
-        topPanel.add(searchPanel, BorderLayout.WEST);
-        topPanel.add(actionPanel, BorderLayout.EAST);
-
-        return topPanel;
+        return actionPanel;
     }
 
-    private Table createTable(String[] columns) {
-        Table newTable = new Table();
-        newTable.setModel(tableModel);
-        
-        newTable.getColumnModel().getColumn(columns.length - 1).setCellRenderer(new ButtonRenderer());
-        newTable.getColumnModel().getColumn(columns.length - 1).setCellEditor(
-            new ButtonEditor(new JCheckBox(), this, controller, newTable));
+    private JButton createStyledButton(String text, Color backgroundColor) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        button.setBackground(backgroundColor);
+        button.setForeground(Color.WHITE);
+        button.setBorderPainted(false);
+        button.setFocusPainted(false);
+        button.setPreferredSize(new Dimension(180, 45));
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(backgroundColor.darker());
+            }
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(backgroundColor);
+            }
+        });
+        return button;
+    }
 
-        newTable.getColumnModel().getColumn(0).setPreferredWidth(150);
-        newTable.getColumnModel().getColumn(1).setPreferredWidth(150);
-        newTable.getColumnModel().getColumn(2).setPreferredWidth(200);
-        newTable.getColumnModel().getColumn(3).setPreferredWidth(150);
-        newTable.getColumnModel().getColumn(4).setPreferredWidth(100);
-    
-        return newTable;
+    private JPanel createTablePanel() {
+        JPanel tablePanel = new JPanel(new BorderLayout(0, 10));
+        tablePanel.setBorder(new EmptyBorder(10, 20, 20, 20));
+
+        // Title above table
+        JLabel tableTitle = new JLabel("Liste des Planifications PEC");
+        tableTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        tableTitle.setForeground(textColor);
+        tablePanel.add(tableTitle, BorderLayout.NORTH);
+
+        return tablePanel;
+    }
+
+    private JTable createStyledTable(String[] columns) {
+        Table styledTable = new Table();
+        styledTable.setModel(tableModel);
+        
+        // Center text in all cells
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        for (int i = 0; i < styledTable.getColumnCount(); i++) {
+            styledTable.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+        }
+
+        // Visual table configuration
+        styledTable.setBackground(Color.WHITE);
+        styledTable.setOpaque(true);
+        styledTable.setSelectionBackground(hoverColor);
+        styledTable.setSelectionForeground(Color.WHITE);
+        styledTable.setRowHeight(40);
+        styledTable.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        
+        // Table header
+        styledTable.getTableHeader().setBackground(primaryColor);
+        styledTable.getTableHeader().setForeground(Color.WHITE);
+        styledTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 16));
+
+        // Column width configuration
+        int[] columnWidths = {150, 150, 200, 150, 80};
+        for (int i = 0; i < columns.length; i++) {
+            styledTable.getColumnModel().getColumn(i).setPreferredWidth(columnWidths[i]);
+        }
+
+        // Actions column
+        styledTable.getColumnModel().getColumn(columns.length - 1).setCellRenderer(new IconRenderer());
+        styledTable.getColumnModel().getColumn(columns.length - 1).setCellEditor(
+            new IconEditor(new JCheckBox(), this, controller, styledTable));
+
+        return styledTable;
+    }
+
+    private JScrollPane createStyledScrollPane(JTable table) {
+        JScrollPane scrollPane = new JScrollPane(table);
+        
+        // Custom background for scroll pane
+        scrollPane.getViewport().setBackground(tableBackgroundColor);
+        scrollPane.setBackground(tableBackgroundColor);
+        
+        // Border with subtle shadow
+        scrollPane.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createEmptyBorder(10, 20, 20, 20),
+            BorderFactory.createLineBorder(new Color(220, 230, 240), 1)
+        ));
+
+        // Add shadow effect
+        scrollPane.setBorder(BorderFactory.createCompoundBorder(
+            scrollPane.getBorder(),
+            BorderFactory.createMatteBorder(1, 1, 2, 2, new Color(200, 210, 220))
+        ));
+
+        return scrollPane;
     }
 
     public void refreshTable() {
@@ -158,8 +259,8 @@ public class PlanificationPECPanel extends JPanel {
     private void showAddDialog() {
         Window parentWindow = SwingUtilities.getWindowAncestor(this);
         JDialog dialog;
-        if (parentWindow instanceof JFrame) {
-            dialog = new JDialog((JFrame) parentWindow, "Ajouter une planification", true);
+        if (parentWindow instanceof JFrame jFrame) {
+            dialog = new JDialog(jFrame, "Ajouter une planification", true);
         } else {
             dialog = new JDialog((Dialog) parentWindow, "Ajouter une planification", true);
         }
@@ -266,127 +367,164 @@ public class PlanificationPECPanel extends JPanel {
     }
 }
 
-class ButtonRenderer extends JButton implements TableCellRenderer {
-    public ButtonRenderer() {
+class IconRenderer extends JPanel implements TableCellRenderer {
+    private final JLabel moreIcon;
+
+    public IconRenderer() {
+        setLayout(new GridBagLayout());
         setOpaque(true);
-        setBackground(new Color(33, 150, 243));
-        setForeground(Color.WHITE);
-        setBorderPainted(false);
-        setFont(new Font("Arial", Font.BOLD, 14));
+        
+        ImageIcon icon = loadScaledIcon("src/icons/more.png", 24, 24);
+        moreIcon = new JLabel(icon);
+        moreIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        
+        add(moreIcon);
+    }
+
+    private ImageIcon loadScaledIcon(String path, int width, int height) {
+        try {
+            ImageIcon originalIcon = new ImageIcon(path);
+            Image scaledImage = originalIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+            return new ImageIcon(scaledImage);
+        } catch (Exception e) {
+            System.err.println("Erreur de chargement de l'icône : " + path);
+            return null;
+        }
     }
 
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value,
             boolean isSelected, boolean hasFocus, int row, int column) {
-        setText("Actions");
+        if (isSelected) {
+            setBackground(new Color(220, 220, 220));
+        } else {
+            setBackground(Color.WHITE);
+        }
         return this;
     }
 }
 
-class ButtonEditor extends DefaultCellEditor {
-    private final JButton button;
-    private String label;
-    private boolean isPushed;
+class IconEditor extends DefaultCellEditor {
+    private final JPanel actionPanel;
+    private final JLabel moreIcon;
     private final PlanificationPECPanel panel;
     private final PlanificationPECController controller;
-    private final JTable table;
+    private JDialog activeDialog;
 
-    public ButtonEditor(JCheckBox checkBox, PlanificationPECPanel panel,
+    public IconEditor(JCheckBox checkBox, PlanificationPECPanel panel,
                        PlanificationPECController controller, JTable table) {
         super(checkBox);
         this.panel = panel;
         this.controller = controller;
-        this.table = table;
 
-        button = new JButton();
-        button.setOpaque(true);
-        button.setBackground(new Color(33, 150, 243));
-        button.setForeground(Color.WHITE);
-        button.setBorderPainted(false);
-        button.setFont(new Font("Arial", Font.BOLD, 14));
-        button.addActionListener(e -> fireEditingStopped());
+        actionPanel = new JPanel(new GridBagLayout());
+        actionPanel.setOpaque(true);
+        actionPanel.setBackground(Color.WHITE);
+
+        // Charger l'icône à partir du fichier
+        moreIcon = new JLabel(loadScaledIcon("src/icons/more.png", 24, 24));
+        moreIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+    }
+
+    private ImageIcon loadScaledIcon(String path, int width, int height) {
+        try {
+            ImageIcon originalIcon = new ImageIcon(path);
+            Image scaledImage = originalIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+            return new ImageIcon(scaledImage);
+        } catch (Exception e) {
+            System.err.println("Erreur de chargement de l'icône : " + path);
+            return null;
+        }
     }
 
     @Override
     public Component getTableCellEditorComponent(JTable table, Object value,
             boolean isSelected, int row, int column) {
-        label = (value == null) ? "" : value.toString();
-        button.setText(label);
-        isPushed = true;
-        return button;
-    }
-
-    @Override
-    public Object getCellEditorValue() {
-        if (isPushed) {
-            showActionsPopup();
+        // Fermer tout dialogue actif
+        if (activeDialog != null && activeDialog.isVisible()) {
+            activeDialog.dispose();
+            activeDialog = null;
         }
-        isPushed = false;
-        return label;
+
+        actionPanel.removeAll();
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.CENTER;
+        actionPanel.add(moreIcon, gbc);
+
+        moreIcon.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                SwingUtilities.invokeLater(() -> {
+                    JPopupMenu popup = new JPopupMenu();
+                    popup.setBackground(Color.WHITE);
+
+                    // Récupérer les informations de la ligne sélectionnée
+                    int selectedRow = table.getSelectedRow();
+                    if (selectedRow < 0) return;
+
+                    Date dateDebut = (Date) table.getValueAt(selectedRow, 0);
+                    Date dateFin = (Date) table.getValueAt(selectedRow, 1);
+                    String activities = table.getValueAt(selectedRow, 2).toString();
+                    Timestamp createdAt = (Timestamp) table.getValueAt(selectedRow, 3);
+
+                    // Edit menu item
+                    JMenuItem editItem = new JMenuItem("Modifier");
+                    editItem.setBackground(new Color(33, 150, 243));
+                    editItem.setForeground(Color.WHITE);
+                    editItem.setFont(new Font("Arial", Font.BOLD, 14));
+                    editItem.addActionListener(e -> {
+                        List<PlanificationPEC> planifications = controller.searchPlanifications(activities);
+                        if (!planifications.isEmpty()) {
+                            PlanificationPEC planification = planifications.get(0);
+                            showEditDialog(planification);
+                        }
+                    });
+                    popup.add(editItem);
+
+                    // Delete menu item
+                    JMenuItem deleteItem = new JMenuItem("Supprimer");
+                    deleteItem.setBackground(new Color(244, 67, 54));
+                    deleteItem.setForeground(Color.WHITE);
+                    deleteItem.setFont(new Font("Arial", Font.BOLD, 14));
+                    deleteItem.addActionListener(e -> {
+                        int confirmation = JOptionPane.showConfirmDialog(
+                            actionPanel,
+                            "Êtes-vous sûr de vouloir supprimer cette planification ?",
+                            "Confirmation de suppression",
+                            JOptionPane.YES_NO_OPTION
+                        );
+
+                        if (confirmation == JOptionPane.YES_OPTION) {
+                            List<PlanificationPEC> planifications = controller.searchPlanifications(activities);
+                            if (!planifications.isEmpty()) {
+                                controller.deletePlanification(planifications.get(0).getId());
+                                panel.refreshTable();
+                            }
+                        }
+                    });
+                    popup.add(deleteItem);
+
+                    // Rapports menu item
+                    JMenuItem rapportsItem = new JMenuItem("Voir les Rapports");
+                    rapportsItem.setBackground(new Color(33, 150, 243));
+                    rapportsItem.setForeground(Color.WHITE);
+                    rapportsItem.setFont(new Font("Arial", Font.BOLD, 14));
+                    rapportsItem.addActionListener(e -> {
+                        List<PlanificationPEC> planifications = controller.searchPlanifications(activities);
+                        if (!planifications.isEmpty()) {
+                            showRapportsDialog(planifications.get(0));
+                        }
+                    });
+                    popup.add(rapportsItem);
+
+                    // Show popup relative to the invoking component
+                    popup.show(moreIcon, 0, moreIcon.getHeight());
+                });
+            }
+        });
+
+        return actionPanel;
     }
-
-    private void showActionsPopup() {
-        int row = table.getSelectedRow();
-        if (row < 0) return;
-
-        Date dateDebut = (Date) table.getValueAt(row, 0);
-        Date dateFin = (Date) table.getValueAt(row, 1);
-        String activities = table.getValueAt(row, 2).toString();
-        Timestamp createdAt = (Timestamp) table.getValueAt(row, 3);
-
-        JPopupMenu popup = new JPopupMenu();
-
-        JMenuItem editItem = new JMenuItem("Modifier");
-        editItem.setBackground(new Color(33, 150, 243));
-        editItem.setForeground(Color.WHITE);
-        editItem.setFont(new Font("Arial", Font.BOLD, 14));
-        editItem.addActionListener(e -> {
-            List<PlanificationPEC> planifications = controller.searchPlanifications(activities);
-            if (!planifications.isEmpty()) {
-                PlanificationPEC planification = planifications.get(0);
-                showEditDialog(planification);
-            }
-        });
-        popup.add(editItem);
-
-        JMenuItem deleteItem = new JMenuItem("Supprimer");
-        deleteItem.setBackground(new Color(244, 67, 54));
-        deleteItem.setForeground(Color.WHITE);
-        deleteItem.setFont(new Font("Arial", Font.BOLD, 14));
-        deleteItem.addActionListener(e -> {
-            int confirmation = JOptionPane.showConfirmDialog(
-                button,
-                "Êtes-vous sûr de vouloir supprimer cette planification ?",
-                "Confirmation de suppression",
-                JOptionPane.YES_NO_OPTION
-            );
-
-            if (confirmation == JOptionPane.YES_OPTION) {
-                List<PlanificationPEC> planifications = controller.searchPlanifications(activities);
-                if (!planifications.isEmpty()) {
-                    controller.deletePlanification(planifications.get(0).getId());
-                    panel.refreshTable();
-                }
-            }
-        });
-        popup.add(deleteItem);
-        
-        JMenuItem rapportsItem = new JMenuItem("Voir les Rapports");
-        rapportsItem.setBackground(new Color(33, 150, 243));
-        rapportsItem.setForeground(Color.WHITE);
-        rapportsItem.setFont(new Font("Arial", Font.BOLD, 14));
-        rapportsItem.addActionListener(e -> {
-            List<PlanificationPEC> planifications = controller.searchPlanifications(activities);
-            if (!planifications.isEmpty()) {
-                showRapportsDialog(planifications.get(0));
-            }
-        });
-        popup.add(rapportsItem);
-
-        popup.show(button, 0, button.getHeight());
-    }
-    
-    
 
     private void showEditDialog(PlanificationPEC planification) {
         Window parentWindow = SwingUtilities.getWindowAncestor(panel);
@@ -405,30 +543,26 @@ class ButtonEditor extends DefaultCellEditor {
         dialog.setVisible(true);
     }
     
-    
     private void showRapportsDialog(PlanificationPEC planification) {
         JDialog rapportsDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(panel),
                                            "Rapports PEC - " + planification.getActivities(),
                                            true);
         rapportsDialog.setLayout(new BorderLayout());
 
-        try {
-            RapportPECPanel rapportPanel = new RapportPECPanel(planification.getId());
-            rapportsDialog.add(rapportPanel, BorderLayout.CENTER);
-            rapportsDialog.setSize(1000, 600);
-            rapportsDialog.setLocationRelativeTo(panel);
-            rapportsDialog.setVisible(true);
-        } catch (ClassNotFoundException e) {
-            JOptionPane.showMessageDialog(panel,
-                "Erreur lors de l'ouverture des rapports",
-                "Erreur",
-                JOptionPane.ERROR_MESSAGE);
-        }
+        var rapportPanel = new RapportPECPanel(planification.getId());
+        rapportsDialog.add(rapportPanel, BorderLayout.CENTER);
+        rapportsDialog.setSize(1000, 600);
+        rapportsDialog.setLocationRelativeTo(panel);
+        rapportsDialog.setVisible(true);
+    }
+
+    @Override
+    public Object getCellEditorValue() {
+        return "";
     }
 
     @Override
     public boolean stopCellEditing() {
-        isPushed = false;
         return super.stopCellEditing();
     }
 }

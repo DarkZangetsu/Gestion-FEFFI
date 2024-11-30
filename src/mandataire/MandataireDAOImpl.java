@@ -102,7 +102,7 @@ public class MandataireDAOImpl implements MandataireDAO {
     @Override
     public void update(Mandataire mandataire) {
         String sql = "UPDATE mandataire SET nom = ?, fonction = ?, date_mandat = ?, code_ecole = ?, " +
-                     "cin = ?, contact = ?, email = ?, nom_etablissement = ? WHERE id = ?";
+                     "CIN = ?, contact = ?, email = ?, nom_etablissement = ? WHERE id = ?";
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, mandataire.getId());

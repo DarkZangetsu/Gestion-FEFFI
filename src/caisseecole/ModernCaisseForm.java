@@ -30,21 +30,27 @@ public class ModernCaisseForm extends JPanel {
     private void initializeComponents(CaisseEcole caisse) {
         Font inputFont = new Font("Segoe UI", Font.PLAIN, 14);
 
-        montantField = createCurrencyField();
+        // Champ Montant
+        montantField = new JTextField(10);
+        montantField.setHorizontalAlignment(JTextField.RIGHT);
         montantField.setFont(inputFont);
 
+        // Champ Raison
         raisonField = new JTextField();
         raisonField.setFont(inputFont);
 
+        // Zone de texte pour Note
         noteArea = new JTextArea(3, 30);
         noteArea.setLineWrap(true);
         noteArea.setWrapStyleWord(true);
         noteArea.setFont(inputFont);
 
+        // Sélecteur de date
         datePicker = new JDateChooser();
         datePicker.setDateFormatString("dd/MM/yyyy");
         datePicker.setPreferredSize(new Dimension(250, 35));
 
+        // Pré-remplir les champs en cas de modification
         if (caisse != null) {
             montantField.setText(String.format("%.2f", caisse.getMontant()));
             raisonField.setText(caisse.getRaison());
@@ -65,6 +71,7 @@ public class ModernCaisseForm extends JPanel {
         Font labelFont = new Font("Segoe UI", Font.BOLD, 14);
         Color labelColor = textColor;
 
+        // Champ Date
         gbc.gridx = 0;
         gbc.gridy = 0;
         JLabel dateLabel = createLabel("Date", labelFont, labelColor);
@@ -73,6 +80,7 @@ public class ModernCaisseForm extends JPanel {
         gbc.gridx = 1;
         add(datePicker, gbc);
 
+        // Champ Montant
         gbc.gridx = 0;
         gbc.gridy = 1;
         JLabel montantLabel = createLabel("Montant", labelFont, labelColor);
@@ -81,6 +89,7 @@ public class ModernCaisseForm extends JPanel {
         gbc.gridx = 1;
         add(montantField, gbc);
 
+        // Champ Raison
         gbc.gridx = 0;
         gbc.gridy = 2;
         JLabel raisonLabel = createLabel("Raison", labelFont, labelColor);
@@ -89,6 +98,7 @@ public class ModernCaisseForm extends JPanel {
         gbc.gridx = 1;
         add(raisonField, gbc);
 
+        // Champ Note
         gbc.gridx = 0;
         gbc.gridy = 3;
         JLabel noteLabel = createLabel("Note", labelFont, labelColor);
@@ -105,23 +115,6 @@ public class ModernCaisseForm extends JPanel {
         label.setFont(font);
         label.setForeground(color);
         return label;
-    }
-
-    private JTextField createCurrencyField() {
-        JTextField field = new JTextField(10);
-        field.setHorizontalAlignment(JTextField.RIGHT);
-
-        DecimalFormat currencyFormat = new DecimalFormat("#,##0.00");
-        NumberFormatter formatter = new NumberFormatter(currencyFormat);
-        formatter.setValueClass(Double.class);
-        formatter.setAllowsInvalid(false);
-        formatter.setCommitsOnValidEdit(true);
-
-        JFormattedTextField formattedField = new JFormattedTextField(formatter);
-        formattedField.setColumns(10);
-        formattedField.setHorizontalAlignment(JTextField.RIGHT);
-
-        return formattedField;
     }
 
     private void setupValidation() {
@@ -141,9 +134,7 @@ public class ModernCaisseForm extends JPanel {
 
     public CaisseEcole saveCaisse(CaisseEcole existingCaisse) {
         try {
-            double montant = Double.parseDouble(
-                montantField.getText().replace(",", ".")
-            );
+            double montant = Double.parseDouble(montantField.getText().replace(",", "."));
             Timestamp createdAt = new Timestamp(datePicker.getDate().getTime());
             String raison = raisonField.getText();
             String note = noteArea.getText();
@@ -160,17 +151,17 @@ public class ModernCaisseForm extends JPanel {
                 return new CaisseEcole(
                     UUID.randomUUID().toString(),
                     etablissementId,
-                    montant, 
-                    createdAt, 
-                    raison, 
+                    montant,
+                    createdAt,
+                    raison,
                     note
                 );
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(
-                this, 
+                this,
                 "Erreur de saisie. Veuillez vérifier vos données.",
-                "Erreur", 
+                "Erreur",
                 JOptionPane.ERROR_MESSAGE
             );
             return null;

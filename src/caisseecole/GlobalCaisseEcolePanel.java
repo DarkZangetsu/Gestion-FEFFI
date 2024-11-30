@@ -9,7 +9,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.border.EmptyBorder;
 
-public class GlobalCaisseEcolePanel extends JPanel {
+public final class GlobalCaisseEcolePanel extends JPanel {
     // Color Palette
     private final Color primaryColor = new Color(23, 32, 42);
     private final Color hoverColor = new Color(33, 97, 140);
@@ -30,8 +30,15 @@ public class GlobalCaisseEcolePanel extends JPanel {
     public GlobalCaisseEcolePanel() {
         setLayout(new BorderLayout(0, 10));
         setBackground(backgroundColor);
-
+admin
         this.controller = new GlobalCaisseEcoleController();
+        
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+        @Override
+        public void componentShown(java.awt.event.ComponentEvent e) {
+            refreshTable(); // Rafraîchir les données lorsqu'il est visible
+            }
+        });
 
         // Header Banner
         JPanel headerBanner = createHeaderBanner();
@@ -59,6 +66,14 @@ public class GlobalCaisseEcolePanel extends JPanel {
         // Charger les données initiales
         refreshTable();
     }
+
+  
+    @Override
+        public void addNotify() {
+            super.addNotify();
+            refreshTable();
+        }
+
 
     private JPanel createHeaderBanner() {
         JPanel bannerPanel = new JPanel(new BorderLayout());
